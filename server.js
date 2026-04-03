@@ -13,6 +13,7 @@ app.use(express.json());
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/property", require("./routes/propertyRoutes"));
+app.use("/api/booking", require("./routes/bookingRoutes"));
 
 app.get("/", (req, res) => {
   res.send("API Running...");
