@@ -1,8 +1,8 @@
 const Booking = require("../models/Booking");
 const Property = require("../models/Property");
 
-
-exports.createBooking = async (req, res) => {
+// ✅ CREATE BOOKING
+exports.createBooking = async (req, res, next) => {
   try {
     if (req.user.role !== "renter") {
       return res.status(403).json({ msg: "Only renters can book" });
@@ -23,6 +23,23 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ msg: "Invalid booking dates" });
     }
 
+    // 🔥 OPTIONAL (ADVANCED): Prevent double booking
+    const existingBooking = await Booking.findOne({
+      propertyId,
+      $or: [
+        {
+          startDate: { $lte: endDate },
+          endDate: { $gte: startDate },
+        },
+      ],
+    });
+
+    if (existingBooking) {
+      return res.status(400).json({
+        msg: "Property already booked for these dates",
+      });
+    }
+
     const totalPrice = days * property.price;
 
     const booking = await Booking.create({
@@ -33,26 +50,28 @@ exports.createBooking = async (req, res) => {
       totalPrice,
     });
 
-    res.json(booking);
+    res.json({ success: true, data: booking });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error); // ✅ send to error middleware
   }
 };
 
-
-exports.getUserBookings = async (req, res) => {
+// ✅ GET USER BOOKINGS
+exports.getUserBookings = async (req, res, next) => {
   try {
     const bookings = await Booking.find({ userId: req.user.id })
       .populate("propertyId");
 
-    res.json(bookings);
+    res.json({ success: true, data: bookings });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-
-exports.getOwnerBookings = async (req, res) => {
+// ✅ GET OWNER BOOKINGS
+exports.getOwnerBookings = async (req, res, next) => {
   try {
     const properties = await Property.find({ ownerId: req.user.id });
 
@@ -62,14 +81,15 @@ exports.getOwnerBookings = async (req, res) => {
       propertyId: { $in: propertyIds },
     }).populate("propertyId userId");
 
-    res.json(bookings);
+    res.json({ success: true, data: bookings });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-
-exports.updateBookingStatus = async (req, res) => {
+// ✅ UPDATE BOOKING STATUS
+exports.updateBookingStatus = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate("propertyId");
@@ -86,8 +106,9 @@ exports.updateBookingStatus = async (req, res) => {
     booking.status = req.body.status;
     await booking.save();
 
-    res.json(booking);
+    res.json({ success: true, data: booking });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };

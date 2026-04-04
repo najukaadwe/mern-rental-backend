@@ -1,7 +1,7 @@
 const Property = require("../models/Property");
 
-
-exports.addProperty = async (req, res) => {
+// ✅ ADD PROPERTY
+exports.addProperty = async (req, res, next) => {
   try {
     if (req.user.role !== "owner") {
       return res.status(403).json({ msg: "Only owners can add property" });
@@ -12,37 +12,83 @@ exports.addProperty = async (req, res) => {
       ownerId: req.user.id,
     });
 
-    res.json(property);
+    res.status(201).json({
+      success: true,
+      msg: "Property created successfully",
+      data: property,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.getProperties = async (req, res) => {
+
+// ✅ GET ALL PROPERTIES (WITH SEARCH + PAGINATION)
+exports.getProperties = async (req, res, next) => {
   try {
-    const properties = await Property.find().populate("ownerId", "name email");
-    res.json(properties);
+    const { location, minPrice, maxPrice, page = 1, limit = 5 } = req.query;
+
+    let filter = {};
+
+    // 🔍 Search by location
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    // 💰 Price filter
+    if (minPrice && maxPrice) {
+      filter.price = { $gte: minPrice, $lte: maxPrice };
+    }
+
+    const properties = await Property.find(filter)
+      .populate("ownerId", "name email")
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Property.countDocuments(filter);
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      data: properties,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 
-exports.getProperty = async (req, res) => {
+// ✅ GET SINGLE PROPERTY
+exports.getProperty = async (req, res, next) => {
   try {
-    const property = await Property.findById(req.params.id).populate("ownerId", "name");
-    res.json(property);
+    const property = await Property.findById(req.params.id).populate(
+      "ownerId",
+      "name email"
+    );
+
+    if (!property) {
+      return res.status(404).json({ msg: "Property not found" });
+    }
+
+    res.json({ success: true, data: property });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 
-exports.updateProperty = async (req, res) => {
+// ✅ UPDATE PROPERTY
+exports.updateProperty = async (req, res, next) => {
   try {
     const property = await Property.findById(req.params.id);
 
-    if (!property) return res.status(404).json({ msg: "Not found" });
+    if (!property) {
+      return res.status(404).json({ msg: "Property not found" });
+    }
 
     if (property.ownerId.toString() !== req.user.id) {
       return res.status(403).json({ msg: "Not authorized" });
@@ -51,21 +97,29 @@ exports.updateProperty = async (req, res) => {
     const updated = await Property.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true } // 🔥 important
     );
 
-    res.json(updated);
+    res.json({
+      success: true,
+      msg: "Property updated",
+      data: updated,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 
-exports.deleteProperty = async (req, res) => {
+// ✅ DELETE PROPERTY
+exports.deleteProperty = async (req, res, next) => {
   try {
     const property = await Property.findById(req.params.id);
 
-    if (!property) return res.status(404).json({ msg: "Not found" });
+    if (!property) {
+      return res.status(404).json({ msg: "Property not found" });
+    }
 
     if (property.ownerId.toString() !== req.user.id) {
       return res.status(403).json({ msg: "Not authorized" });
@@ -73,8 +127,12 @@ exports.deleteProperty = async (req, res) => {
 
     await property.deleteOne();
 
-    res.json({ msg: "Property deleted" });
+    res.json({
+      success: true,
+      msg: "Property deleted successfully",
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };

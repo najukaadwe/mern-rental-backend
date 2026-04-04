@@ -2,39 +2,51 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-
-exports.register = async (req, res) => {
+// ✅ REGISTER
+exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
     const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ msg: "User already exists" });
+    if (userExists) {
+      return res.status(400).json({ msg: "User already exists" });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // ❌ REMOVE manual hashing if using pre-save middleware
+    // const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name,
       email,
-      password,
+      password, // middleware will hash
       role,
     });
 
-    res.json({ msg: "User registered", user });
+    res.json({
+      success: true,
+      msg: "User registered",
+      data: user,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error); // ✅ send to error middleware
   }
 };
 
-
-exports.login = async (req, res) => {
+// ✅ LOGIN
+exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: "User not found" });
+    if (!user) {
+      return res.status(400).json({ msg: "User not found" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
@@ -42,8 +54,13 @@ exports.login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ token, user });
+    res.json({
+      success: true,
+      token,
+      data: user,
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error); // ✅ send to middleware
   }
 };
