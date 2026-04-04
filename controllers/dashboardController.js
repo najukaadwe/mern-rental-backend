@@ -18,7 +18,7 @@ exports.getOwnerDashboard = async (req, res) => {
       propertyId: { $in: propertyIds },
     });
 
-    // 📊 Calculate data
+    
     const totalProperties = properties.length;
     const totalBookings = bookings.length;
 
