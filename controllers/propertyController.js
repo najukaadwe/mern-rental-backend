@@ -7,8 +7,10 @@ exports.addProperty = async (req, res, next) => {
       return res.status(403).json({ msg: "Only owners can add property" });
     }
 
+    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
     const property = await Property.create({
       ...req.body,
+         images: imagePaths,
       ownerId: req.user.id,
     });
 

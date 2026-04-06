@@ -8,6 +8,8 @@ const {
   updateProperty,
   deleteProperty,
 } = require("../controllers/propertyController");
+const upload = require("../middleware/uploadMiddleware");
+
 
 const auth = require("../middleware/authMiddleware");
 
@@ -23,7 +25,7 @@ const auth = require("../middleware/authMiddleware");
  * @swagger
  * /api/property:
  *   post:
- *     summary: Create property
+ *     summary: Create property with images
  *     description: Only owner can create property
  *     tags: [Property]
  *     security:
@@ -31,19 +33,28 @@ const auth = require("../middleware/authMiddleware");
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
- *           example:
- *             title: "2BHK Flat"
- *             description: "Nice house"
- *             price: 2000
- *             location: "Pune"
- *             images: ["img1.jpg", "img2.jpg"]
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               location:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
  *     responses:
  *       201:
  *         description: Property created successfully
  */
-router.post("/", auth, addProperty);
-
+router.post("/", auth, upload.array("images", 5), addProperty);
 
 /**
  * @swagger

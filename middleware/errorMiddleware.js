@@ -28,6 +28,6 @@ module.exports = (err, req, res, next) => {
   // ✅ Default error
   res.status(500).json({
     success: false,
-    msg: "Server Error",
+     msg: err.message,
   });
 };

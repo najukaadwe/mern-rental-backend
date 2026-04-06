@@ -19,6 +19,7 @@ app.use("/api/property", require("./routes/propertyRoutes"));
 app.use("/api/booking", require("./routes/bookingRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/uploads", express.static("uploads"));
 app.get("/", (req, res) => {
   res.send("API Running...");
 });
