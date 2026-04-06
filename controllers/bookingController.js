@@ -57,7 +57,7 @@ exports.createBooking = async (req, res, next) => {
   }
 };
 
-// ✅ GET USER BOOKINGS
+
 exports.getUserBookings = async (req, res, next) => {
   try {
     const bookings = await Booking.find({ userId: req.user.id })
@@ -70,7 +70,7 @@ exports.getUserBookings = async (req, res, next) => {
   }
 };
 
-// ✅ GET OWNER BOOKINGS
+
 exports.getOwnerBookings = async (req, res, next) => {
   try {
     const properties = await Property.find({ ownerId: req.user.id });
@@ -88,7 +88,7 @@ exports.getOwnerBookings = async (req, res, next) => {
   }
 };
 
-// ✅ UPDATE BOOKING STATUS
+
 exports.updateBookingStatus = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id)
