@@ -54,6 +54,8 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(400).json({ msg: "Invalid credentials" });
   }
 
+  
+
   res.json({
     success: true,
     token: generateToken(user),

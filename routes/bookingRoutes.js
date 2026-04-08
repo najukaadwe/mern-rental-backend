@@ -7,7 +7,10 @@ const {
   getOwnerBookings,
   updateBookingStatus,
 } = require("../controllers/bookingController");
-
+const {
+  createBookingSchema,
+  updateBookingSchema,
+} = require("../validators/booking.validator");
 const auth = require("../middleware/authMiddleware");
 
 /**
@@ -30,7 +33,8 @@ const auth = require("../middleware/authMiddleware");
  *       200:
  *         description: Booking created successfully
  */
-router.post("/", auth, createBooking);
+
+router.post("/", validate(createBookingSchema), createBooking);
 
 /**
  * @swagger
@@ -83,6 +87,6 @@ router.get("/owner", auth, getOwnerBookings);
  *       200:
  *         description: Booking updated
  */
-router.put("/:id/status", auth, updateBookingStatus);
+router.put("/:id", validate(updateBookingSchema), updateBooking);
 
 module.exports = router;

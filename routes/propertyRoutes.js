@@ -10,7 +10,11 @@ const {
 } = require("../controllers/propertyController");
 const upload = require("../middleware/uploadMiddleware");
 
-
+const validate = require("../middleware/validate");
+const {
+  createPropertySchema,
+  updatePropertySchema,
+} = require("../validators/property.validator");
 const auth = require("../middleware/authMiddleware");
 
 /**
@@ -54,7 +58,15 @@ const auth = require("../middleware/authMiddleware");
  *       201:
  *         description: Property created successfully
  */
-router.post("/", auth, upload.array("images", 5), addProperty);
+router.post(
+  "/",
+  auth,
+  upload.array("images", 5),
+  validate(createPropertySchema),
+  addProperty
+);
+
+
 
 /**
  * @swagger
@@ -89,6 +101,7 @@ router.post("/", auth, upload.array("images", 5), addProperty);
  *         description: List of properties
  */
 router.get("/", getProperties);
+
 
 
 /**
@@ -140,7 +153,8 @@ router.get("/:id", getProperty);
  *       200:
  *         description: Property updated
  */
-router.put("/:id", auth, updateProperty);
+router.put("/:id", auth, validate(updatePropertySchema), updateProperty);
+
 
 
 /**
