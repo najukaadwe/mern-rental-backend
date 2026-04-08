@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
+const sendEmail = require("../utils/sendEmail");
 
 
 const generateToken = (user) => {
@@ -54,7 +55,12 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(400).json({ msg: "Invalid credentials" });
   }
 
-  
+    // ✅ OPTIONAL: Send login email
+  await sendEmail({
+    to: user.email,
+    subject: "Login Successful",
+    text: "You have successfully logged in to your account",
+  });
 
   res.json({
     success: true,
