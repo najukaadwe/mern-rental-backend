@@ -2,7 +2,7 @@ const Booking = require("../models/Booking");
 const Property = require("../models/Property");
 const asyncHandler = require("../utils/asyncHandler");
 
-
+const sendSMS = require("../utils/sendSMS");
 exports.createBooking = asyncHandler(async (req, res) => {
   if (req.user.role !== "renter") {
     return res.status(403).json({ msg: "Only renters can book" });
@@ -50,6 +50,10 @@ exports.createBooking = asyncHandler(async (req, res) => {
     totalPrice,
   });
 
+await sendSMS(
+  `+91${req.user.phone}`, // ✅ India format
+  `Hi ${req.user.name}, your booking for ${property.title} is confirmed 🎉`
+);
   res.json({ success: true, data: booking });
 });
 

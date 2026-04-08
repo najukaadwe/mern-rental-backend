@@ -2,7 +2,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const sendEmail = require("../utils/sendEmail");
-
+const sendSMS = require("../utils/sendSMS");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -61,6 +61,10 @@ exports.login = asyncHandler(async (req, res) => {
     subject: "Login Successful",
     text: "You have successfully logged in to your account",
   });
+await sendSMS(
+  `+91${user.phone}`, // ✅ FIXED
+  `Hi ${user.name}, your login success 🎉`
+);
 
   res.json({
     success: true,

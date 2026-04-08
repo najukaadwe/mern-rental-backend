@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
             "Password must include at least 1 letter, 1 number, and 1 special character"
         ],
     },
+    phone: {
+  type: String,
+  required: true,
+},
 
     role: {
         type: String,

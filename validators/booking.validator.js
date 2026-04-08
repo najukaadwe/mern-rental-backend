@@ -1,7 +1,7 @@
 const Joi = require("joi");
 
 exports.createBookingSchema = Joi.object({
-  userId: Joi.string().hex().length(24).required(),
+
 
   userName: Joi.string().optional(),
 
@@ -18,7 +18,7 @@ exports.createBookingSchema = Joi.object({
       "date.greater": "End date must be greater than start date",
     }),
 
-  totalPrice: Joi.number().min(0).required(),
+  totalPrice: Joi.number().min(0),
 
   status: Joi.string()
     .valid("pending", "confirmed", "cancelled")
