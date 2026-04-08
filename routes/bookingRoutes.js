@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../middleware/validate");
 
 const {
   createBooking,
@@ -87,6 +88,6 @@ router.get("/owner", auth, getOwnerBookings);
  *       200:
  *         description: Booking updated
  */
-router.put("/:id", validate(updateBookingSchema), updateBooking);
+router.put("/:id", validate(updateBookingSchema), updateBookingStatus);
 
 module.exports = router;
