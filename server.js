@@ -7,17 +7,18 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 const limiter = require("./middleware/rateLimiter");
 const helmet = require("helmet");
+const morgan = require("morgan");
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// ✅ Global Middlewares
+app.use(morgan("dev")); // 📊 log first
+app.use(helmet());      // 🔐 security
 app.use(cors());
 app.use(express.json());
-app.use(helmet());
-app.use(limiter); // ✅ MOVE HERE
+app.use(limiter);       // 🔐 rate limit
 
 
 // ✅ Routes
