@@ -1,13 +1,11 @@
 const Booking = require("../models/Booking");
 const Property = require("../models/Property");
 const asyncHandler = require("../utils/asyncHandler");
-
 const sendSMS = require("../utils/sendSMS");
-exports.createBooking = asyncHandler(async (req, res) => {
-  if (req.user.role !== "renter") {
-    return res.status(403).json({ msg: "Only renters can book" });
-  }
 
+
+// ✅ Create Booking (role handled in middleware)
+exports.createBooking = asyncHandler(async (req, res) => {
   const { propertyId, startDate, endDate } = req.body;
 
   const property = await Property.findById(propertyId);
@@ -23,15 +21,11 @@ exports.createBooking = asyncHandler(async (req, res) => {
     return res.status(400).json({ msg: "Invalid booking dates" });
   }
 
- 
+  // ✅ Optimized conflict check
   const existingBooking = await Booking.findOne({
     propertyId,
-    $or: [
-      {
-        startDate: { $lte: endDate },
-        endDate: { $gte: startDate },
-      },
-    ],
+    startDate: { $lt: endDate },
+    endDate: { $gt: startDate },
   });
 
   if (existingBooking) {
@@ -50,37 +44,59 @@ exports.createBooking = asyncHandler(async (req, res) => {
     totalPrice,
   });
 
-await sendSMS(
-  `+91${req.user.phone}`, // ✅ India format
-  `Hi ${req.user.name}, your booking for ${property.title} is confirmed 🎉`
-);
-  res.json({ success: true, data: booking });
+  // ✅ Safe SMS (won’t break API)
+  if (req.user?.phone) {
+    try {
+      await sendSMS(
+        `+91${req.user.phone}`,
+        `Hi ${req.user.name}, your booking for ${property.title} is confirmed 🎉`
+      );
+    } catch (err) {
+      console.log("SMS failed but booking created");
+    }
+  }
+
+  res.status(201).json({
+    success: true,
+    msg: "Booking created successfully",
+    data: booking,
+  });
 });
 
 
 
+// ✅ Get bookings for renter
 exports.getUserBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ userId: req.user.id })
     .populate("propertyId");
 
-  res.json({ success: true, data: bookings });
+  res.json({
+    success: true,
+    data: bookings,
+  });
 });
 
 
 
+// ✅ Get bookings for owner
 exports.getOwnerBookings = asyncHandler(async (req, res) => {
   const properties = await Property.find({ ownerId: req.user.id });
 
-  const propertyIds = properties.map(p => p._id);
+  const propertyIds = properties.map((p) => p._id);
 
   const bookings = await Booking.find({
     propertyId: { $in: propertyIds },
   }).populate("propertyId userId");
 
-  res.json({ success: true, data: bookings });
+  res.json({
+    success: true,
+    data: bookings,
+  });
 });
 
 
+
+// ✅ Update booking status (ownership check still needed)
 exports.updateBookingStatus = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id)
     .populate("propertyId");
@@ -89,7 +105,7 @@ exports.updateBookingStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ msg: "Booking not found" });
   }
 
-  // 🔒 Only owner can update
+  // 🔒 Ownership check (THIS stays)
   if (booking.propertyId.ownerId.toString() !== req.user.id) {
     return res.status(403).json({ msg: "Not authorized" });
   }
@@ -97,5 +113,9 @@ exports.updateBookingStatus = asyncHandler(async (req, res) => {
   booking.status = req.body.status;
   await booking.save();
 
-  res.json({ success: true, data: booking });
+  res.json({
+    success: true,
+    msg: "Booking status updated",
+    data: booking,
+  });
 });

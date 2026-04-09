@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
+
 const validate = require("../middleware/validate");
+const auth = require("../middleware/authMiddleware");
+const authorize = require("../middleware/authorize");
 
 const {
   createBooking,
@@ -8,11 +11,11 @@ const {
   getOwnerBookings,
   updateBookingStatus,
 } = require("../controllers/bookingController");
+
 const {
   createBookingSchema,
   updateBookingSchema,
 } = require("../validators/booking.validator");
-const auth = require("../middleware/authMiddleware");
 
 /**
  * @swagger
@@ -22,72 +25,56 @@ const auth = require("../middleware/authMiddleware");
  *     tags: [Booking]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           example:
- *             propertyId: 661234abcd1234
- *             startDate: 2026-04-01
- *             endDate: 2026-04-05
- *     responses:
- *       200:
- *         description: Booking created successfully
  */
+router.post(
+  "/",
+  auth,                        // ✅ add auth
+  authorize("renter"),         // 🔥 only renter
+  validate(createBookingSchema),
+  createBooking
+);
 
-router.post("/", validate(createBookingSchema), createBooking);
 
 /**
  * @swagger
  * /api/booking/user:
  *   get:
  *     summary: Get logged-in user bookings
- *     tags: [Booking]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of user bookings
  */
-router.get("/user", auth, getUserBookings);
+router.get(
+  "/user",
+  auth,
+  authorize("renter"),         // 🔥 only renter
+  getUserBookings
+);
+
 
 /**
  * @swagger
  * /api/booking/owner:
  *   get:
  *     summary: Get bookings for owner properties
- *     tags: [Booking]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of owner bookings
  */
-router.get("/owner", auth, getOwnerBookings);
+router.get(
+  "/owner",
+  auth,
+  authorize("owner"),          // 🔥 only owner
+  getOwnerBookings
+);
+
 
 /**
  * @swagger
  * /api/booking/{id}/status:
  *   put:
  *     summary: Update booking status
- *     tags: [Booking]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Booking ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           example:
- *             status: confirmed
- *     responses:
- *       200:
- *         description: Booking updated
  */
-router.put("/:id", validate(updateBookingSchema), updateBookingStatus);
+router.put(
+  "/:id",
+  auth,
+  authorize("owner"),          // 🔥 only owner
+  validate(updateBookingSchema),
+  updateBookingStatus
+);
 
 module.exports = router;

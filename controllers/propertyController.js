@@ -2,11 +2,8 @@ const Property = require("../models/Property");
 const asyncHandler = require("../utils/asyncHandler");
 
 
+// ✅ Add Property (role handled by middleware)
 exports.addProperty = asyncHandler(async (req, res) => {
-  if (req.user.role !== "owner") {
-    return res.status(403).json({ msg: "Only owners can add property" });
-  }
-
   const imagePaths = req.files?.map(file => `/uploads/${file.filename}`) || [];
 
   const property = await Property.create({
@@ -24,6 +21,7 @@ exports.addProperty = asyncHandler(async (req, res) => {
 
 
 
+// ✅ Get Properties (Pagination + Filtering)
 exports.getProperties = asyncHandler(async (req, res) => {
   const {
     location,
@@ -36,14 +34,17 @@ exports.getProperties = asyncHandler(async (req, res) => {
 
   let filter = {};
 
-
+  // 🔍 Search by location
   if (location) {
     filter.location = { $regex: location, $options: "i" };
   }
 
-
+  // 💰 Price filter
   if (minPrice && maxPrice) {
-    filter.price = { $gte: Number(minPrice), $lte: Number(maxPrice) };
+    filter.price = {
+      $gte: Number(minPrice),
+      $lte: Number(maxPrice),
+    };
   }
 
   const properties = await Property.find(filter)
@@ -65,6 +66,7 @@ exports.getProperties = asyncHandler(async (req, res) => {
 
 
 
+// ✅ Get Single Property
 exports.getProperty = asyncHandler(async (req, res) => {
   const property = await Property.findById(req.params.id)
     .populate("ownerId", "name email");
@@ -73,11 +75,15 @@ exports.getProperty = asyncHandler(async (req, res) => {
     return res.status(404).json({ msg: "Property not found" });
   }
 
-  res.json({ success: true, data: property });
+  res.json({
+    success: true,
+    data: property,
+  });
 });
 
 
 
+// ✅ Update Property (ownership check remains)
 exports.updateProperty = asyncHandler(async (req, res) => {
   const property = await Property.findById(req.params.id);
 
@@ -85,6 +91,7 @@ exports.updateProperty = asyncHandler(async (req, res) => {
     return res.status(404).json({ msg: "Property not found" });
   }
 
+  // 🔒 Ownership check (IMPORTANT)
   if (property.ownerId.toString() !== req.user.id) {
     return res.status(403).json({ msg: "Not authorized" });
   }
@@ -97,13 +104,14 @@ exports.updateProperty = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    msg: "Property updated",
+    msg: "Property updated successfully",
     data: updated,
   });
 });
 
 
 
+// ✅ Delete Property (Soft delete + ownership check)
 exports.deleteProperty = asyncHandler(async (req, res) => {
   const property = await Property.findById(req.params.id);
 
@@ -111,11 +119,11 @@ exports.deleteProperty = asyncHandler(async (req, res) => {
     return res.status(404).json({ msg: "Property not found" });
   }
 
+  // 🔒 Ownership check
   if (property.ownerId.toString() !== req.user.id) {
     return res.status(403).json({ msg: "Not authorized" });
   }
 
- 
   property.isDeleted = true;
   await property.save();
 
