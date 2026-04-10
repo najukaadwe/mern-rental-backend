@@ -1,74 +1,27 @@
-const User = require("../models/User");
-const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
-const sendEmail = require("../utils/sendEmail");
-const sendSMS = require("../utils/sendSMS");
-
-const generateToken = (user) => {
-  return jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
-};
+const authService = require("../services/auth.service");
 
 
-
+// ✅ Register
 exports.register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
-
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    return res.status(400).json({ msg: "User already exists" });
-  }
-
-  const user = await User.create({
-    name,
-    email,
-    password, 
-    role,
-  });
+  const { user, token } = await authService.registerService(req.body);
 
   res.status(201).json({
     success: true,
     msg: "User registered successfully",
-    token: generateToken(user),
+    token,
     data: user,
   });
 });
 
 
-
+// ✅ Login
 exports.login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await User.findOne({ email }).select("+password");
-
-  if (!user) {
-    return res.status(400).json({ msg: "User not found" });
-  }
-
-
-  const isMatch = await user.comparePassword(password);
-
-  if (!isMatch) {
-    return res.status(400).json({ msg: "Invalid credentials" });
-  }
-
-    // ✅ OPTIONAL: Send login email
-  await sendEmail({
-    to: user.email,
-    subject: "Login Successful",
-    text: "You have successfully logged in to your account",
-  });
-await sendSMS(
-  `+91${user.phone}`, // ✅ FIXED
-  `Hi ${user.name}, your login success 🎉`
-);
+  const { user, token } = await authService.loginService(req.body);
 
   res.json({
     success: true,
-    token: generateToken(user),
+    token,
     data: user,
   });
 });

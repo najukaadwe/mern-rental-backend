@@ -12,7 +12,7 @@ const {
 const upload = require("../middleware/uploadMiddleware");
 const validate = require("../middleware/validate");
 const auth = require("../middleware/authMiddleware");
-const authorize = require("../middleware/authorize"); // 🔥 ADD THIS
+const authorize = require("../middleware/authorize");
 
 const {
   createPropertySchema,
@@ -34,11 +34,38 @@ const {
  *     summary: Create property with images
  *     description: Only owner can create property
  *     tags: [Property]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - location
+ *               - price
+ *             properties:
+ *               title:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       201:
+ *         description: Property created successfully
  */
 router.post(
   "/",
   auth,
-  authorize("owner"), // 🔥 ONLY OWNER
+  authorize("owner"),
   upload.array("images", 5),
   validate(createPropertySchema),
   addProperty
@@ -50,6 +77,10 @@ router.post(
  * /api/property:
  *   get:
  *     summary: Get all properties
+ *     tags: [Property]
+ *     responses:
+ *       200:
+ *         description: List of properties
  */
 router.get("/", getProperties);
 
@@ -59,6 +90,18 @@ router.get("/", getProperties);
  * /api/property/{id}:
  *   get:
  *     summary: Get single property
+ *     tags: [Property]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Property details
+ *       404:
+ *         description: Property not found
  */
 router.get("/:id", getProperty);
 
@@ -69,11 +112,30 @@ router.get("/:id", getProperty);
  *   put:
  *     summary: Update property
  *     description: Only owner can update property
+ *     tags: [Property]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             title: "Updated title"
+ *             price: 5000
+ *     responses:
+ *       200:
+ *         description: Property updated successfully
  */
 router.put(
   "/:id",
   auth,
-  authorize("owner"), // 🔥 ONLY OWNER
+  authorize("owner"),
   validate(updatePropertySchema),
   updateProperty
 );
@@ -85,11 +147,23 @@ router.put(
  *   delete:
  *     summary: Delete property
  *     description: Only owner can delete property
+ *     tags: [Property]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Property deleted successfully
  */
 router.delete(
   "/:id",
   auth,
-  authorize("owner"), // 🔥 ONLY OWNER
+  authorize("owner"),
   deleteProperty
 );
 
